@@ -1,0 +1,219 @@
+# crowdstrike-field-guide
+
+**Arquitectura CrowdStrike Falcon para entornos híbridos y multi-cloud en LATAM**
+
+> Guía técnico-consultiva para CISOs, arquitectos de seguridad y equipos de operaciones que evalúan, implementan o maduran CrowdStrike Falcon en organizaciones enterprise.
+
+---
+
+## El problema que este repositorio aborda
+
+La adopción de CrowdStrike en LATAM frecuentemente enfrenta el mismo patrón:
+se compra la plataforma, se despliega el sensor, y el equipo opera con 30–40% de la capacidad real de detección activada.
+
+No porque falte tecnología. Porque falta arquitectura de adopción.
+
+Este repositorio documenta cómo estructurar esa adopción: módulos, integraciones, casos de uso y métricas reales.
+
+---
+
+## Contenido
+
+```
+crowdstrike-field-guide/
+├── arquitectura/
+│   ├── falcon-platform-overview.md
+│   ├── falcon-deployment-patterns.md
+│   ├── hybrid-cloud-architecture.md
+│   └── diagrams/
+│       ├── falcon-sensor-deployment.png
+│       ├── crowdstrike-xdr-flow.png
+│       └── falcon-cnapp-architecture.png
+├── modulos/
+│   ├── falcon-prevent-edr.md
+│   ├── falcon-insight-xdr.md
+│   ├── falcon-cloud-security.md
+│   ├── falcon-identity-protection.md
+│   └── falcon-intelligence.md
+├── casos-de-uso/
+│   ├── ransomware-prevention.md
+│   ├── supply-chain-attack-detection.md
+│   ├── cloud-workload-protection.md
+│   └── identity-threat-detection.md
+├── integraciones/
+│   ├── crowdstrike-splunk-integration.md
+│   ├── crowdstrike-vectra-ai.md
+│   └── crowdstrike-soar-playbooks.md
+├── madurez/
+│   ├── crowdstrike-adoption-framework.md
+│   └── edr-xdr-maturity-model.md
+└── cheatsheets/
+    ├── falcon-sensor-cheatsheet.md
+    └── threat-hunting-with-crowdstrike.md
+```
+
+---
+
+## Plataforma Falcon — Arquitectura de módulos
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                    CROWDSTRIKE FALCON PLATFORM                        │
+│                         (Cloud-native SaaS)                          │
+├───────────────┬─────────────────┬───────────────┬────────────────────┤
+│   ENDPOINT    │    IDENTITY     │     CLOUD      │   THREAT INTEL    │
+│               │                 │                │                    │
+│ Falcon        │ Falcon Identity │ Falcon Cloud   │ Falcon Intel       │
+│ Prevent (AV)  │ Protection      │ Security       │ (IOCs, TTPs)       │
+│               │                 │ (CNAPP/CSPM)   │                    │
+│ Falcon        │ Falcon          │ Falcon         │ Falcon             │
+│ Insight (EDR) │ Zero Trust      │ Horizon        │ Adversary Intel    │
+│               │ Assessment      │                │                    │
+│ Falcon        │                 │ Falcon         │                    │
+│ Overwatch     │                 │ Container Sec. │                    │
+│ (MDR)         │                 │                │                    │
+├───────────────┴─────────────────┴───────────────┴────────────────────┤
+│                    FALCON XDR — Correlación cross-domain              │
+├──────────────────────────────────────────────────────────────────────┤
+│              FALCON FUSION SOAR — Automatización y respuesta          │
+└──────────────────────────────────────────────────────────────────────┘
+                                    │
+              ┌─────────────────────┴──────────────────────┐
+              ▼                                             ▼
+   ┌─────────────────────┐                    ┌─────────────────────┐
+   │   FALCON SENSOR     │                    │   FALCON API        │
+   │ (lightweight agent) │                    │  SIEM · SOAR · ITSM │
+   │ Windows · Linux     │                    │  Splunk · Sentinel  │
+   │ Mac · Cloud · K8s   │                    │  ServiceNow · Slack  │
+   └─────────────────────┘                    └─────────────────────┘
+```
+
+---
+
+## Framework de adopción — 4 fases
+
+### Fase 1: Visibilidad base (Semanas 1–4)
+```
+Objetivo: Ver todo. Detectar nada todavía — solo observar.
+- Despliegue de sensores: 100% cobertura de endpoints
+- Validación de comunicación con Falcon Cloud
+- Baseline de comportamiento por grupo de activos
+- Identificación de gaps de cobertura (endpoints sin sensor)
+
+KPI: % de endpoints con sensor activo y comunicando
+Meta: > 98% antes de activar prevención
+```
+
+### Fase 2: Prevención y detección básica (Semanas 5–8)
+```
+Objetivo: Activar prevención sin disrumpir operaciones.
+- Activar Falcon Prevent en modo detección → prevención gradual
+- Configurar políticas por tipo de activo (servidores vs workstations)
+- Activar detecciones EDR de alta confianza
+- Definir proceso de excepciones y falsos positivos
+
+KPI: Tasa de falsos positivos, tiempo de respuesta a alertas
+Meta: < 5% falsos positivos en alertas de prevención
+```
+
+### Fase 3: Detección avanzada y correlación (Semanas 9–16)
+```
+Objetivo: Threat hunting proactivo y correlación XDR.
+- Activar Falcon XDR: correlación endpoint + identidad + cloud
+- Threat hunting con Falcon Insight: queries sobre comportamiento
+- Integración con SIEM (Splunk / Sentinel)
+- Activar Falcon Intelligence: contexto de adversarios
+
+KPI: Mean Time to Detect (MTTD), cobertura de MITRE ATT&CK
+Meta: Detectar en < 60 minutos desde intrusión
+```
+
+### Fase 4: Automatización y madurez (Mes 4+)
+```
+Objetivo: Reducir trabajo manual. Respuesta automática donde sea seguro.
+- Falcon Fusion SOAR: playbooks de respuesta automática
+- Integración con ITSM (ServiceNow, Jira)
+- Métricas de madurez: MTTR, false positive rate, coverage score
+- Revisión trimestral de política y casos de uso
+
+KPI: MTTR (Mean Time to Respond), % de alertas con respuesta automática
+Meta: MTTR < 15 minutos para incidentes de alta criticidad
+```
+
+---
+
+## Casos de uso críticos por industria
+
+### Banca y Finanzas
+| Amenaza | Módulo CrowdStrike | Indicador de éxito |
+|---------|-------------------|-------------------|
+| Ransomware en endpoints | Falcon Prevent + Behavior | 0 ejecuciones exitosas |
+| Robo de credenciales privilegiadas | Falcon Identity Protection | Alerta < 5 min desde compromiso |
+| Movimiento lateral post-breach | Falcon Insight XDR | Detección en < 30 min |
+| Ataque a workloads en cloud | Falcon Cloud Security | Cobertura 100% de instancias EC2/GCP |
+
+### Manufactura (OT/IT convergence)
+| Amenaza | Módulo CrowdStrike | Indicador de éxito |
+|---------|-------------------|-------------------|
+| Acceso no autorizado a sistemas IT → OT | Falcon XDR | Correlación de eventos IT y red OT |
+| Supply chain attack | Falcon Intelligence | IOCs de proveedores activos |
+| Persistencia en servidores industriales | Falcon Insight EDR | Detección de procesos anómalos |
+
+### Telco
+| Amenaza | Módulo CrowdStrike | Indicador de éxito |
+|---------|-------------------|-------------------|
+| SIM swapping y fraude de identidad | Falcon Identity | Detección de auth anómala |
+| Ataque a infraestructura de red | Falcon XDR | Correlación endpoint + red |
+| Exfiltración de datos de clientes | Falcon Prevent | Bloqueo de exfiltración por DLP |
+
+---
+
+## Métricas que importan
+
+No midas el número de alertas. Mide:
+
+```
+MTTD  = Mean Time to Detect     → Cuánto tardas en saber que pasó algo
+MTTR  = Mean Time to Respond    → Cuánto tardas en contener
+MTTC  = Mean Time to Contain    → Cuánto tardas en aislar el activo afectado
+
+Coverage Score = Endpoints con sensor / Total endpoints * 100
+False Positive Rate = Alertas inválidas / Total alertas * 100
+
+MITRE ATT&CK Coverage = Técnicas detectadas / Técnicas relevantes al sector
+```
+
+**Un SOC que no mide MTTD/MTTR no puede mejorar. Solo puede reaccionar.**
+
+---
+
+## Preguntas que guían la conversación técnica
+
+> *¿Cuántos endpoints tienen sensor activo hoy, y cuántos operan sin visibilidad?*
+
+> *¿Cuánto tiempo tarda tu equipo en detectar que un endpoint fue comprometido?*
+
+> *¿Tienes visibilidad de lo que hacen tus workloads en cloud después del deploy?*
+
+> *¿Tu estrategia de identidad y tu estrategia de endpoint están correlacionadas, o son silos separados?*
+
+---
+
+## Integraciones documentadas
+
+- **CrowdStrike + Splunk** — Ingesta de eventos Falcon en Splunk ES para correlación SIEM
+- **CrowdStrike + Vectra AI** — Correlación EDR + NDR para visibilidad completa (endpoint + red)
+- **CrowdStrike + SOAR** — Playbooks de respuesta: aislamiento automático, enriquecimiento de alertas
+- **CrowdStrike + ServiceNow** — Tickets automáticos desde detecciones de alta criticidad
+
+---
+
+## Sobre el autor
+
+**Julio Perdomo** — Enterprise Technology Advisor · Cloud Security · SOC Modernization · LATAM
+
+[LinkedIn](https://www.linkedin.com/in/julio-cesar-perdomo) · [GitHub](https://github.com/julioperdomo) · Panorama Technologies
+
+---
+
+*Contenido técnico-consultivo de referencia. No es documentación oficial de CrowdStrike Inc.*
